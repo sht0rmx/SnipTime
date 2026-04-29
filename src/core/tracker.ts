@@ -3,15 +3,14 @@ import * as vscode from 'vscode';
 import { SQLiteManager } from '../db/manager';
 import { ActivityTags, HeartbeatInput, HeartbeatKind } from '../models/activity';
 
-const heartbeatIntervalMs = 30 * 1000;
 const minHeartbeatGapMs = 10 * 1000;
 const idleTimeoutMs = 5 * 60 * 1000;
 const maxIntervalGapMs = 2 * 60 * 1000;
 
 export class TrackerService implements vscode.Disposable {
     private readonly disposables: vscode.Disposable[] = [];
-    private readonly heartbeatTimer: ReturnType<typeof setInterval>;
     private queue = Promise.resolve();
+
     private lastHeartbeat: HeartbeatInput | undefined;
     private lastInteractionMs = Date.now();
 
@@ -20,23 +19,22 @@ export class TrackerService implements vscode.Disposable {
         private readonly onDidRecord: () => void,
     ) {
         this.disposables.push(
-            vscode.workspace.onDidChangeTextDocument(event => this.captureDocument(event.document, 'edit', true)),
-            vscode.workspace.onDidSaveTextDocument(document => this.captureDocument(document, 'save', true)),
-            vscode.window.onDidChangeTextEditorSelection(event => this.captureDocument(event.textEditor.document, 'selection', true)),
-            vscode.window.onDidChangeActiveTextEditor(editor => {
-                if (editor) {
-                    this.captureDocument(editor.document, 'focus', false);
-                }
+            vscode.workspace.onDidChangeTextDocument(event => {
+                this.captureDocument(event.document, 'edit', true);
             }),
-            vscode.window.onDidChangeWindowState(state => {
-                if (state.focused) {
-                    this.captureActiveEditor('focus', false);
-                }
-            }),
-        );
 
-        this.heartbeatTimer = setInterval(() => this.captureHeartbeatTick(), heartbeatIntervalMs);
-        this.captureActiveEditor('focus', false);
+            vscode.workspace.onDidSaveTextDocument(document => {
+                this.captureDocument(document, 'save', true);
+            }),
+
+            vscode.window.onDidChangeTextEditorSelection(event => {
+                if (event.selections.every(sel => sel.isEmpty)) { return; }
+                this.captureDocument(event.textEditor.document, 'selection', true);
+            }),
+
+            vscode.window.onDidChangeActiveTextEditor(() => { }),
+            vscode.window.onDidChangeWindowState(() => { }),
+        );
     }
 
     public async flush(): Promise<void> {
@@ -44,35 +42,32 @@ export class TrackerService implements vscode.Disposable {
     }
 
     public dispose(): void {
-        clearInterval(this.heartbeatTimer);
         for (const disposable of this.disposables) {
             disposable.dispose();
         }
     }
 
-    private captureActiveEditor(kind: HeartbeatKind, markInteraction: boolean): void {
-        const editor = vscode.window.activeTextEditor;
-        if (editor) {
-            this.captureDocument(editor.document, kind, markInteraction);
-        }
+    private static isInteractive(kind: HeartbeatKind): boolean {
+        return kind === 'edit' || kind === 'selection' || kind === 'save';
     }
 
-    private captureHeartbeatTick(): void {
-        if (!vscode.window.state.focused || Date.now() - this.lastInteractionMs > idleTimeoutMs) {
-            return;
-        }
-
-        this.captureActiveEditor('tick', false);
-    }
-
-    private captureDocument(document: vscode.TextDocument, kind: HeartbeatKind, markInteraction: boolean): void {
-        if (document.uri.scheme !== 'file') {
-            return;
-        }
+    private captureDocument(
+        document: vscode.TextDocument,
+        kind: HeartbeatKind,
+        markInteraction: boolean
+    ): void {
+        if (document.uri.scheme !== 'file') { return; }
 
         const now = Date.now();
+
         if (markInteraction) {
             this.lastInteractionMs = now;
+        }
+
+        // idle — разрываем цепочку
+        if (now - this.lastInteractionMs > idleTimeoutMs) {
+            this.lastHeartbeat = undefined;
+            return;
         }
 
         const heartbeat: HeartbeatInput = {
@@ -81,22 +76,30 @@ export class TrackerService implements vscode.Disposable {
             timestamp: now,
         };
 
-        if (this.shouldThrottle(heartbeat)) {
-            return;
-        }
+        if (this.shouldThrottle(heartbeat)) { return; }
 
         this.recordHeartbeat(heartbeat);
     }
 
     private recordHeartbeat(heartbeat: HeartbeatInput): void {
         const previous = this.lastHeartbeat;
-        this.lastHeartbeat = heartbeat;
+
+        if (TrackerService.isInteractive(heartbeat.kind)) {
+            this.lastHeartbeat = heartbeat;
+        }
 
         this.queue = this.queue
             .then(async () => {
-                await this.db.saveHeartbeat(heartbeat);
+                if (TrackerService.isInteractive(heartbeat.kind)) {
+                    await this.db.saveHeartbeat(heartbeat);
+                }
 
-                if (previous && this.shouldCountInterval(previous, heartbeat)) {
+                if (
+                    previous &&
+                    TrackerService.isInteractive(previous.kind) &&
+                    TrackerService.isInteractive(heartbeat.kind) &&
+                    this.shouldCountInterval(previous, heartbeat)
+                ) {
                     await this.db.saveInterval({
                         project: previous.project,
                         projectPath: previous.projectPath,
@@ -117,9 +120,9 @@ export class TrackerService implements vscode.Disposable {
     }
 
     private shouldThrottle(heartbeat: HeartbeatInput): boolean {
-        if (!this.lastHeartbeat || heartbeat.kind === 'save' || heartbeat.kind === 'focus') {
-            return false;
-        }
+        if (!this.lastHeartbeat) { return false; }
+
+        if (!TrackerService.isInteractive(heartbeat.kind)) { return true; }
 
         return (
             heartbeat.timestamp - this.lastHeartbeat.timestamp < minHeartbeatGapMs &&

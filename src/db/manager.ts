@@ -62,78 +62,6 @@ interface MetadataRow {
 
 const mergeGapMs = 1000;
 const projectIcons = ['ri-folder-3-line', 'ri-folder-chart-line', 'ri-stack-line', 'ri-box-3-line', 'ri-terminal-box-line', 'ri-git-branch-line'];
-const languageIcons = ['ri-code-s-slash-line', 'ri-braces-line', 'ri-terminal-line', 'ri-code-box-line', 'ri-hashtag', 'ri-file-code-line'];
-const fileIcons = ['ri-file-code-line', 'ri-file-text-line', 'ri-file-list-3-line', 'ri-file-settings-line', 'ri-file-paper-2-line'];
-const languageIconMap: Record<string, string> = {
-    bat: 'ri-terminal-line',
-    c: 'ri-code-s-slash-line',
-    clojure: 'ri-braces-line',
-    coffeescript: 'ri-cup-line',
-    cpp: 'ri-code-s-slash-line',
-    csharp: 'ri-hashtag',
-    css: 'ri-css3-line',
-    dart: 'ri-flutter-line',
-    dockerfile: 'ri-instance-line',
-    fsharp: 'ri-hashtag',
-    go: 'ri-code-s-slash-line',
-    graphql: 'ri-node-tree',
-    handlebars: 'ri-braces-line',
-    html: 'ri-html5-line',
-    java: 'ri-cup-line',
-    javascript: 'ri-javascript-line',
-    javascriptreact: 'ri-reactjs-line',
-    json: 'ri-braces-line',
-    jsonc: 'ri-braces-line',
-    kotlin: 'ri-code-s-slash-line',
-    less: 'ri-css3-line',
-    lua: 'ri-moon-line',
-    makefile: 'ri-tools-line',
-    markdown: 'ri-markdown-line',
-    'objective-c': 'ri-code-s-slash-line',
-    'objective-cpp': 'ri-code-s-slash-line',
-    perl: 'ri-code-s-slash-line',
-    php: 'ri-php-line',
-    plaintext: 'ri-file-text-line',
-    powershell: 'ri-terminal-line',
-    pug: 'ri-code-box-line',
-    python: 'ri-python-line',
-    r: 'ri-code-s-slash-line',
-    razor: 'ri-code-s-slash-line',
-    ruby: 'ri-gemini-line',
-    rust: 'ri-code-s-slash-line',
-    scss: 'ri-css3-line',
-    shellscript: 'ri-terminal-line',
-    sql: 'ri-database-2-line',
-    swift: 'ri-code-s-slash-line',
-    typescript: 'ri-javascript-line',
-    typescriptreact: 'ri-reactjs-line',
-    vue: 'ri-vuejs-line',
-    xml: 'ri-code-box-line',
-    yaml: 'ri-settings-3-line',
-};
-const fileIconMap: Record<string, string> = {
-    css: 'ri-css3-line',
-    dockerfile: 'ri-instance-line',
-    env: 'ri-key-2-line',
-    gitignore: 'ri-git-branch-line',
-    html: 'ri-html5-line',
-    js: 'ri-javascript-line',
-    jsx: 'ri-reactjs-line',
-    json: 'ri-braces-line',
-    lock: 'ri-lock-line',
-    md: 'ri-markdown-line',
-    mjs: 'ri-javascript-line',
-    scss: 'ri-css3-line',
-    sh: 'ri-terminal-line',
-    sql: 'ri-database-2-line',
-    svg: 'ri-image-line',
-    ts: 'ri-javascript-line',
-    tsx: 'ri-reactjs-line',
-    txt: 'ri-file-text-line',
-    vue: 'ri-vuejs-line',
-    yaml: 'ri-settings-3-line',
-    yml: 'ri-settings-3-line',
-};
 
 export class SQLiteManager {
     private readonly db: sqlite3.Database;
@@ -773,8 +701,7 @@ export class SQLiteManager {
     }
 
     private colorForSeed(seed: string): string {
-        const hashNum = this.hash(seed);
-        const hue = Math.abs(hashNum * 137.5) % 360;
+        const hue = (this.hash(seed) * 2654435761 >>> 0) % 360;
         return this.hslToHex(hue, 70, 60);
     }
 
@@ -795,20 +722,10 @@ export class SQLiteManager {
         }
 
         if (kind === 'language') {
-            return languageIconMap[seed.toLowerCase()] ?? languageIcons[this.hash(seed) % languageIcons.length];
+            return "ri-checkbox-blank-circle-fill";
         }
 
-        const extension = SQLiteManager.fileExtension(seed);
-        if (extension && fileIconMap[extension]) {
-            return fileIconMap[extension];
-        }
-
-        const basename = path.basename(seed).toLowerCase();
-        if (fileIconMap[basename]) {
-            return fileIconMap[basename];
-        }
-
-        return fileIcons[this.hash(seed) % fileIcons.length];
+        return "ri-checkbox-blank-circle-fill";
     }
 
     private normalizeIcon(kind: TagKind, key: string, icon: string): string {
