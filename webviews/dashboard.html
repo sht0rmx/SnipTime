@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="night">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="{{csp}}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script nonce="{{nonce}}" src="https://cdn.tailwindcss.com"></script>
+    <script nonce="{{nonce}}" type="module" src="https://unpkg.com/cally"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/daisyui.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/themes.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        :root {
+            color-scheme: dark;
+        }
+
+        body {
+            min-width: 320px;
+            margin: 0;
+            background: var(--vscode-editor-background);
+            color: var(--vscode-foreground);
+            font-family: var(--vscode-font-family);
+        }
+
+        .page {
+            min-height: 100vh;
+            background: var(--vscode-editor-background);
+        }
+
+        .surface {
+            border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 72%, transparent);
+            border-radius: 8px;
+            background: color-mix(in srgb, var(--vscode-editor-background) 88%, black);
+        }
+
+        .summary-card {
+            min-height: 5.25rem;
+            transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+        }
+
+        .summary-card:hover {
+            border-color: color-mix(in srgb, var(--vscode-focusBorder) 70%, var(--vscode-panel-border));
+            transform: translateY(-1px);
+        }
+
+        .muted {
+            color: color-mix(in srgb, var(--vscode-foreground) 66%, transparent);
+        }
+
+        .topbar {
+            border-bottom: 1px solid color-mix(in srgb, var(--vscode-panel-border) 72%, transparent);
+            padding-bottom: 0.9rem;
+        }
+
+        .donut-wrap {
+            position: relative;
+            width: min(13.5rem, 62vw);
+            aspect-ratio: 1;
+        }
+
+        .donut-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .donut-track {
+            fill: none;
+            stroke: color-mix(in srgb, var(--vscode-foreground) 12%, transparent);
+            stroke-width: 11;
+        }
+
+        .donut-segment {
+            fill: none;
+            stroke-width: 15;
+            stroke-color: black;
+            stroke-linecap: butt;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+            transition: stroke-dasharray 420ms ease, stroke-dashoffset 420ms ease, opacity 180ms ease;
+            border-width: 3px;
+        }
+
+        .donut-center {
+            position: absolute;
+            inset: 23%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            background: color-mix(in srgb, var(--vscode-editor-background) 94%, black);
+            text-align: center;
+        }
+
+        .tabs-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            border-bottom: 1px solid color-mix(in srgb, var(--vscode-panel-border) 72%, transparent);
+        }
+
+        .ui-tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            min-height: 2.25rem;
+            padding: 0 0.75rem;
+            border: 1px solid transparent;
+            border-radius: 8px 8px 0 0;
+            color: color-mix(in srgb, var(--vscode-foreground) 72%, transparent);
+            transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+        }
+
+        .ui-tab.active {
+            border-color: color-mix(in srgb, var(--vscode-panel-border) 84%, transparent);
+            border-bottom-color: var(--vscode-editor-background);
+            color: var(--vscode-foreground);
+            background: color-mix(in srgb, var(--vscode-editor-background) 92%, white);
+        }
+
+        .today-button {
+            background-color: var(--vscode-button-background);
+        }
+
+        .date-button {
+            background-color: color-mix(in srgb, var(--vscode-editor-background) 92%, white);
+        }
+
+        .date-button.open {
+            border-color: color-mix(in srgb, var(--vscode-focusBorder) 80%, transparent);
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--vscode-focusBorder) 38%, transparent);
+        }
+
+        .tab-panel[hidden] {
+            display: none;
+        }
+
+        .tab-panel {
+            animation: fadeSlide 180ms ease;
+        }
+
+        .progress-track,
+        .day-track {
+            position: relative;
+            overflow: hidden;
+            border-radius: 999px;
+            background: color-mix(in srgb, var(--vscode-foreground) 11%, transparent);
+        }
+
+        .progress-track {
+            height: 0.5rem;
+        }
+
+        .day-track {
+            height: 0.8rem;
+        }
+
+        .progress-fill,
+        .day-segment {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+        }
+
+        .progress-fill {
+            transition: width 420ms ease;
+        }
+
+        .day-segment {
+            position: absolute;
+            top: 0;
+            min-width: 0.25rem;
+            opacity: 0.95;
+            transition: left 420ms ease, width 420ms ease, opacity 160ms ease;
+        }
+
+        .day-segment:hover {
+            opacity: 1;
+        }
+
+        .breakdown-row {
+            animation: fadeSlide 220ms ease both;
+        }
+
+        .chart {
+            height: 16rem;
+            display: grid;
+            align-items: end;
+            gap: 0.75rem;
+            padding: 1rem 0.5rem;
+            box-sizing: border-box;
+        }
+
+        .chart.week {
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+        }
+
+        .chart.year {
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+        }
+
+        .chart-column {
+            min-width: 0;
+            display: grid;
+            grid-template-rows: 1fr auto auto;
+            gap: 0.25rem;
+            height: 100%;
+            align-items: end;
+        }
+
+        .chart-bar {
+            align-self: end;
+            width: 100%;
+            max-height: 100%;
+            min-height: 0.35rem;
+            overflow: hidden;
+            border-radius: 6px 6px 2px 2px;
+            background: color-mix(in srgb, var(--vscode-foreground) 9%, transparent);
+            transition: height 420ms ease;
+
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-bar.empty {
+            background: color-mix(in srgb, var(--vscode-foreground) 9%, transparent);
+        }
+
+        .chart-segment {
+            display: block;
+            width: 100%;
+            transition: height 420ms ease;
+
+            box-sizing: border-box;
+            border-bottom: 2px solid var(--vscode-editor-background);
+        }
+
+        .chart-segment:last-child {
+            border-bottom: none;
+        }
+
+        .chart-fill {
+            min-height: 0.35rem;
+            border-radius: 6px 6px 2px 2px;
+            background: #2dd4bf;
+            transition: height 420ms ease;
+        }
+
+        .date-popover {
+            position: absolute;
+            top: calc(100% + 0.5rem);
+            left: 0;
+            z-index: 20;
+        }
+
+        .date-popover[hidden] {
+            display: none;
+        }
+
+        calendar-date {
+            --rounded-box: 0.5rem;
+            color: var(--vscode-foreground);
+            background: color-mix(in srgb, var(--vscode-editor-background) 92%, black);
+            border-color: color-mix(in srgb, var(--vscode-panel-border) 78%, transparent);
+        }
+
+        @keyframes fadeSlide {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 760px) {
+            .chart {
+                gap: 0.35rem;
+            }
+
+            .donut-wrap {
+                width: min(11.5rem, 70vw);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="page">
+        <div class="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
+            <header class="topbar flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div id="generatedAt" class="text-sm muted"></div>
+                <div class="flex flex-wrap gap-2">
+                    <button id="prevDay" class="btn btn-ghost btn-sm btn-square" title="Previous day">
+                        <i class="ri-arrow-left-s-line text-lg"></i>
+                    </button>
+                    <div class="relative">
+                        <button id="dateButton" class="btn btn-outline btn-sm min-w-25 justify-between date-button px-3"
+                            title="Open calendar">
+                            <i class="ri-calendar-line"></i>
+                            <span id="dateButtonLabel">Today</span>
+                        </button>
+                        <div id="datePopover" class="date-popover" hidden>
+                            <calendar-date id="calendarDate" class="cally border shadow-lg rounded-box">
+                                <svg aria-label="Previous" class="fill-current size-4" slot="previous"
+                                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                    <path fill="currentColor" d="M15.75 19.5 8.25 12l7.5-7.5"></path>
+                                </svg>
+                                <svg aria-label="Next" class="fill-current size-4" slot="next"
+                                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                    <path fill="currentColor" d="m8.25 4.5 7.5 7.5-7.5 7.5"></path>
+                                </svg>
+                                <calendar-month></calendar-month>
+                            </calendar-date>
+                        </div>
+                    </div>
+                    <button id="nextDay" class="btn btn-ghost btn-sm btn-square" title="Next day">
+                        <i class="ri-arrow-right-s-line text-lg"></i>
+                    </button>
+                    <button id="todayButton"
+                        class="btn btn-primary btn-sm today-button px-2  text-[var(--vscode-editor-background)]"
+                        title="Jump to today">
+                        <i class="ri-crosshair-2-line"></i>
+                        Today
+                    </button>
+                    <button id="refresh" class="btn btn-ghost btn-sm btn-square" title="Refresh">
+                        <i class="ri-refresh-line text-lg"></i>
+                    </button>
+                </div>
+            </header>
+
+            <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div class="surface summary-card p-4" title="Coding time for the selected calendar day">
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-sm muted">Selected Day</span>
+                        <i class="ri-calendar-check-line text-teal-300"></i>
+                    </div>
+                    <div id="daySummaryTotal" class="mt-2 text-2xl font-semibold">0s</div>
+                    <div id="daySummaryLabel" class="mt-1 truncate text-sm muted"></div>
+                </div>
+                <div class="surface summary-card p-4" title="Coding time recorded today">
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-sm muted">Today</span>
+                        <i class="ri-sun-line text-amber-300"></i>
+                    </div>
+                    <div id="todaySummaryTotal" class="mt-2 text-2xl font-semibold">0s</div>
+                    <div id="todaySummaryMeta" class="mt-1 truncate text-sm muted"></div>
+                </div>
+                <div class="surface summary-card p-4" title="Total coding time in the selected week">
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-sm muted">Week</span>
+                        <i class="ri-bar-chart-grouped-line text-sky-300"></i>
+                    </div>
+                    <div id="weekSummaryTotal" class="mt-2 text-2xl font-semibold">0s</div>
+                    <div id="weekSummaryRange" class="mt-1 truncate text-sm muted"></div>
+                </div>
+                <div class="surface summary-card p-4" title="All coding time stored in the local SQLite database">
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-sm muted">Total Time</span>
+                        <i class="ri-infinity-line text-rose-300"></i>
+                    </div>
+                    <div id="lifetimeSummaryTotal" class="mt-2 text-2xl font-semibold">0s</div>
+                    <div id="yearSummaryTotal" class="mt-1 truncate text-sm muted"></div>
+                </div>
+            </section>
+
+            <div role="tablist" class="tabs-row justify-center">
+                <button class="ui-tab active" data-period="day" role="tab">
+                    <i class="ri-time-line"></i>
+                    Day
+                </button>
+                <button class="ui-tab" data-period="week" role="tab">
+                    <i class="ri-bar-chart-line"></i>
+                    Week
+                </button>
+                <button class="ui-tab" data-period="year" role="tab">
+                    <i class="ri-line-chart-line"></i>
+                    Year
+                </button>
+            </div>
+
+            <section id="dayPanel" class="tab-panel surface p-4">
+                <div class="flex flex-col items-center gap-3">
+                    <div id="donut" class="donut-wrap">
+                        <svg class="donut-svg" viewBox="0 0 100 100" aria-hidden="true">
+                            <circle class="donut-track" cx="50" cy="50" r="42"></circle>
+                            <g id="donutSegments"></g>
+                        </svg>
+                        <div class="donut-center">
+                            <div id="donutValue" class="text-2xl font-semibold">0s</div>
+                            <div id="donutLabel" class="mt-1 text-xs muted">Projects</div>
+                        </div>
+                    </div>
+                    <div class="w-full max-w-sm text-center">
+                        <div id="dayLabel" class="text-base font-semibold"></div>
+                        <div class="mt-1 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm muted">
+                            <span>Today <b id="todayMetric" class="font-semibold text-current">0s</b></span>
+                            <span>Total <b id="lifetimeMetric" class="font-semibold text-current">0s</b></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 min-w-0">
+                    <div role="tablist" class="tabs-row justify-center">
+                        <button class="ui-tab active" data-breakdown="projects" role="tab">
+                            <i class="ri-folder-chart-line"></i>
+                            Projects
+                        </button>
+                        <button class="ui-tab" data-breakdown="languages" role="tab">
+                            <i class="ri-code-s-slash-line"></i>
+                            Languages
+                        </button>
+                        <button class="ui-tab" data-breakdown="files" role="tab">
+                            <i class="ri-file-list-3-line"></i>
+                            Files
+                        </button>
+                    </div>
+                    <div id="breakdownList" class="mt-4 grid gap-4"></div>
+                </div>
+            </section>
+
+            <section id="weekPanel" class="tab-panel surface p-4" hidden>
+                <div class="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <h2 class="text-lg font-semibold">Week</h2>
+                        <div id="weekSubtitle" class="text-sm muted"></div>
+                    </div>
+                    <div id="weekTotal" class="text-2xl font-semibold">0s</div>
+                </div>
+                <div id="weekChart" class="chart week"></div>
+                <div class="mt-5">
+                    <div role="tablist" class="tabs-row">
+                        <button class="ui-tab active" data-week-breakdown="projects" role="tab"
+                            title="Color week columns by project">
+                            <i class="ri-folder-chart-line"></i>
+                            Projects
+                        </button>
+                        <button class="ui-tab" data-week-breakdown="languages" role="tab"
+                            title="Color week columns by language">
+                            <i class="ri-code-s-slash-line"></i>
+                            Languages
+                        </button>
+                        <button class="ui-tab" data-week-breakdown="files" role="tab"
+                            title="Color week columns by file">
+                            <i class="ri-file-list-3-line"></i>
+                            Files
+                        </button>
+                    </div>
+                    <div id="weekBreakdownList" class="mt-4 grid gap-3"></div>
+                </div>
+            </section>
+
+            <section id="yearPanel" class="tab-panel surface p-4" hidden>
+                <div class="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <h2 id="yearTitle" class="text-lg font-semibold">Year</h2>
+                        <div class="text-sm muted">Monthly coding time</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="prevYear" class="btn btn-ghost btn-sm btn-square" title="Previous year">
+                            <i class="ri-arrow-left-s-line text-lg"></i>
+                        </button>
+                        <div id="yearTotal" class="text-2xl font-semibold">0s</div>
+                        <button id="nextYear" class="btn btn-ghost btn-sm btn-square" title="Next year">
+                            <i class="ri-arrow-right-s-line text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="yearChart" class="chart year"></div>
+                <div class="mt-5">
+                    <div role="tablist" class="tabs-row">
+                        <button class="ui-tab active" data-year-breakdown="projects" role="tab"
+                            title="Color year columns by project">
+                            <i class="ri-folder-chart-line"></i>
+                            Projects
+                        </button>
+                        <button class="ui-tab" data-year-breakdown="languages" role="tab"
+                            title="Color year columns by language">
+                            <i class="ri-code-s-slash-line"></i>
+                            Languages
+                        </button>
+                        <button class="ui-tab" data-year-breakdown="files" role="tab"
+                            title="Color year columns by file">
+                            <i class="ri-file-list-3-line"></i>
+                            Files
+                        </button>
+                    </div>
+                    <div id="yearBreakdownList" class="mt-4 grid gap-3"></div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script nonce="{{nonce}}">
+        const vscode = acquireVsCodeApi();
+        const fallbackColor = '#2dd4bf';
+
+        const state = {
+            activePeriod: 'day',
+            activeBreakdown: 'projects',
+            activeWeekBreakdown: 'projects',
+            activeYearBreakdown: 'projects',
+            selectedDateMs: Date.now(),
+            data: null,
+        };
+
+        const els = {
+            generatedAt: document.getElementById('generatedAt'),
+            prevDay: document.getElementById('prevDay'),
+            nextDay: document.getElementById('nextDay'),
+            todayButton: document.getElementById('todayButton'),
+            refresh: document.getElementById('refresh'),
+            dateButton: document.getElementById('dateButton'),
+            dateButtonLabel: document.getElementById('dateButtonLabel'),
+            datePopover: document.getElementById('datePopover'),
+            calendarDate: document.getElementById('calendarDate'),
+            donutSegments: document.getElementById('donutSegments'),
+            donutValue: document.getElementById('donutValue'),
+            donutLabel: document.getElementById('donutLabel'),
+            dayLabel: document.getElementById('dayLabel'),
+            todayMetric: document.getElementById('todayMetric'),
+            lifetimeMetric: document.getElementById('lifetimeMetric'),
+            daySummaryTotal: document.getElementById('daySummaryTotal'),
+            daySummaryLabel: document.getElementById('daySummaryLabel'),
+            todaySummaryTotal: document.getElementById('todaySummaryTotal'),
+            todaySummaryMeta: document.getElementById('todaySummaryMeta'),
+            weekSummaryTotal: document.getElementById('weekSummaryTotal'),
+            weekSummaryRange: document.getElementById('weekSummaryRange'),
+            lifetimeSummaryTotal: document.getElementById('lifetimeSummaryTotal'),
+            yearSummaryTotal: document.getElementById('yearSummaryTotal'),
+            breakdownList: document.getElementById('breakdownList'),
+            weekSubtitle: document.getElementById('weekSubtitle'),
+            weekTotal: document.getElementById('weekTotal'),
+            weekChart: document.getElementById('weekChart'),
+            weekBreakdownList: document.getElementById('weekBreakdownList'),
+            yearTitle: document.getElementById('yearTitle'),
+            yearTotal: document.getElementById('yearTotal'),
+            prevYear: document.getElementById('prevYear'),
+            nextYear: document.getElementById('nextYear'),
+            yearChart: document.getElementById('yearChart'),
+            yearBreakdownList: document.getElementById('yearBreakdownList'),
+        };
+
+        document.querySelectorAll('[data-period]').forEach(button => {
+            button.addEventListener('click', () => setActivePeriod(button.dataset.period));
+        });
+
+        document.querySelectorAll('[data-breakdown]').forEach(button => {
+            button.addEventListener('click', () => {
+                state.activeBreakdown = button.dataset.breakdown;
+                document.querySelectorAll('[data-breakdown]').forEach(tab => {
+                    tab.classList.toggle('active', tab.dataset.breakdown === state.activeBreakdown);
+                });
+                renderDay(state.data);
+            });
+        });
+
+        document.querySelectorAll('[data-week-breakdown]').forEach(button => {
+            button.addEventListener('click', () => {
+                state.activeWeekBreakdown = button.dataset.weekBreakdown;
+                document.querySelectorAll('[data-week-breakdown]').forEach(tab => {
+                    tab.classList.toggle('active', tab.dataset.weekBreakdown === state.activeWeekBreakdown);
+                });
+                renderWeek(state.data);
+            });
+        });
+
+        document.querySelectorAll('[data-year-breakdown]').forEach(button => {
+            button.addEventListener('click', () => {
+                state.activeYearBreakdown = button.dataset.yearBreakdown;
+                document.querySelectorAll('[data-year-breakdown]').forEach(tab => {
+                    tab.classList.toggle('active', tab.dataset.yearBreakdown === state.activeYearBreakdown);
+                });
+                renderYear(state.data);
+            });
+        });
+
+        els.prevDay.addEventListener('click', () => moveSelectedDate(-1));
+        els.nextDay.addEventListener('click', () => moveSelectedDate(1));
+        els.prevYear.addEventListener('click', () => moveSelectedYear(-1));
+        els.nextYear.addEventListener('click', () => moveSelectedYear(1));
+        els.todayButton.addEventListener('click', () => {
+            state.selectedDateMs = Date.now();
+            requestStats();
+        });
+        els.refresh.addEventListener('click', requestStats);
+        els.dateButton.addEventListener('click', () => {
+            els.datePopover.hidden = !els.datePopover.hidden;
+            els.dateButton.classList.toggle('open', !els.datePopover.hidden);
+        });
+        els.calendarDate.addEventListener('change', event => {
+            const value = event.target.value;
+            if (!value) {
+                return;
+            }
+
+            state.selectedDateMs = dateKeyToLocalMs(value);
+            els.datePopover.hidden = true;
+            els.dateButton.classList.remove('open');
+            requestStats();
+        });
+        window.addEventListener('click', event => {
+            if (!els.datePopover.hidden && !els.datePopover.contains(event.target) && !els.dateButton.contains(event.target)) {
+                els.datePopover.hidden = true;
+                els.dateButton.classList.remove('open');
+            }
+        });
+
+        window.addEventListener('message', event => {
+            if (event.data?.command === 'stats') {
+                state.data = event.data.data;
+                state.selectedDateMs = state.data.selectedDateMs;
+                render(state.data);
+            }
+        });
+
+        function requestStats() {
+            vscode.postMessage({
+                command: 'fetch',
+                selectedDateMs: state.selectedDateMs,
+            });
+        }
+
+        function moveSelectedDate(offset) {
+            const date = new Date(state.selectedDateMs);
+            state.selectedDateMs = new Date(date.getFullYear(), date.getMonth(), date.getDate() + offset).getTime();
+            requestStats();
+        }
+
+        function moveSelectedYear(offset) {
+            const date = new Date(state.selectedDateMs);
+            state.selectedDateMs = new Date(date.getFullYear() + offset, date.getMonth(), date.getDate()).getTime();
+            requestStats();
+        }
+
+        function setActivePeriod(period) {
+            state.activePeriod = period;
+
+            document.querySelectorAll('[data-period]').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.period === period);
+            });
+            document.querySelectorAll('.tab-panel').forEach(panel => {
+                panel.hidden = panel.id !== period + 'Panel';
+            });
+        }
+
+        function render(data) {
+            els.generatedAt.textContent = 'Updated ' + formatClock(data.generatedAt);
+            els.dateButtonLabel.textContent = data.day.dateKey;
+            els.calendarDate.value = data.day.dateKey;
+            els.todayMetric.textContent = formatDuration(data.today.totalMs);
+            els.lifetimeMetric.textContent = formatDuration(data.lifetimeMs);
+            els.daySummaryTotal.textContent = formatDuration(data.day.totalMs);
+            els.daySummaryLabel.textContent = data.day.label;
+            els.todaySummaryTotal.textContent = formatDuration(data.today.totalMs);
+            els.todaySummaryMeta.textContent = data.today.projects[0]?.label ?? 'No project yet';
+            els.weekSummaryTotal.textContent = formatDuration(data.week.totalMs);
+            els.weekSummaryRange.textContent = formatShortDate(data.week.startMs) + ' - ' + formatShortDate(data.week.endMs - 1);
+            els.lifetimeSummaryTotal.textContent = formatDuration(data.lifetimeMs);
+            els.yearSummaryTotal.textContent = data.year.year + ': ' + formatDuration(data.year.totalMs);
+            renderDay(data);
+            renderWeek(data);
+            renderYear(data);
+        }
+
+        function renderDay(data) {
+            if (!data) {
+                return;
+            }
+
+            const day = data.day;
+            const items = day[state.activeBreakdown] ?? [];
+
+            els.dayLabel.textContent = day.label + ' · ' + formatDuration(day.totalMs);
+            els.donutValue.textContent = formatDuration(day.totalMs);
+            els.donutLabel.textContent = labelForBreakdown(state.activeBreakdown);
+            renderDonut(items, day.totalMs);
+            renderSegmentRows(day, items);
+        }
+
+        function renderDonut(items, totalMs) {
+            els.donutSegments.textContent = '';
+
+            if (totalMs <= 0 || items.length === 0) {
+                return;
+            }
+
+            const visibleItems = items.slice(0, 8);
+            const GAP_SIZE = visibleItems.length > 1 ? 0.3 : 0;
+
+            let offset = 0;
+
+            visibleItems.forEach((item) => {
+                const percent = (item.durationMs / totalMs) * 100;
+
+                if (percent > GAP_SIZE) {
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('class', 'donut-segment');
+                    circle.setAttribute('cx', '50');
+                    circle.setAttribute('cy', '50');
+                    circle.setAttribute('r', '42');
+                    circle.setAttribute('pathLength', '100');
+                    circle.setAttribute('stroke', item.color || fallbackColor);
+
+                    circle.setAttribute('stroke-dasharray', `${percent - GAP_SIZE} ${100 - (percent - GAP_SIZE)}`);
+                    circle.setAttribute('stroke-dashoffset', String(-offset));
+
+                    const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                    title.textContent = `${item.label}: ${formatDuration(item.durationMs)}`;
+                    circle.appendChild(title);
+
+                    els.donutSegments.appendChild(circle);
+                }
+
+                offset += percent;
+            });
+        }
+
+        function renderSegmentRows(day, items) {
+            els.breakdownList.textContent = '';
+
+            if (items.length === 0) {
+                els.breakdownList.appendChild(emptyState('No time yet'));
+                return;
+            }
+
+            items.slice(0, state.activeBreakdown === 'files' ? 18 : 12).forEach((item, index) => {
+                const row = document.createElement('div');
+                const header = document.createElement('div');
+                const name = document.createElement('div');
+                const duration = document.createElement('div');
+                const secondary = document.createElement('div');
+                const track = document.createElement('div');
+                const color = item.color || fallbackColor;
+
+                row.className = 'breakdown-row';
+                row.style.animationDelay = Math.min(index * 18, 160) + 'ms';
+                header.className = 'mb-1 flex min-w-0 items-center justify-between gap-3 text-sm';
+                name.className = 'flex min-w-0 items-center gap-2 font-medium';
+                duration.className = 'shrink-0 text-xs muted';
+                secondary.className = 'mb-2 truncate text-xs muted';
+                track.className = 'day-track';
+                const icon = document.createElement('i');
+                icon.className = (item.icon || 'ri-pulse-line') + ' shrink-0';
+                icon.style.color = color;
+                const label = document.createElement('span');
+                label.className = 'truncate';
+                label.textContent = item.label;
+                name.append(icon, label);
+                duration.textContent = formatDuration(item.durationMs);
+                secondary.textContent = item.secondary ?? '';
+                row.title = tooltipForBreakdown(item, day.totalMs);
+
+                segmentsForItem(day, item).forEach(segmentItem => {
+                    const segment = document.createElement('span');
+                    const left = ((segmentItem.startMs - day.startMs) / (day.endMs - day.startMs)) * 100;
+                    const width = ((segmentItem.endMs - segmentItem.startMs) / (day.endMs - day.startMs)) * 100;
+                    segment.className = 'day-segment';
+                    segment.style.left = Math.max(0, left) + '%';
+                    segment.style.width = Math.max(0.35, width) + '%';
+                    segment.style.background = color;
+                    segment.title = formatClock(segmentItem.startMs) + ' - ' + formatClock(segmentItem.endMs) + ' · ' + segmentTitle(segmentItem);
+                    track.appendChild(segment);
+                });
+
+                const tools = document.createElement('div');
+                tools.className = 'flex shrink-0 items-center gap-2';
+                if (item.kind === 'project' || item.kind === 'language') {
+                    const rename = document.createElement('button');
+                    rename.className = 'btn btn-ghost btn-xs btn-square';
+                    rename.title = 'Rename ' + item.kind;
+                    rename.innerHTML = '<i class="ri-edit-line"></i>';
+                    rename.addEventListener('click', event => {
+                        event.stopPropagation();
+                        vscode.postMessage({
+                            command: 'renameTag',
+                            kind: item.kind,
+                            key: item.key,
+                            label: item.label,
+                        });
+                    });
+                    tools.append(duration, rename);
+                } else {
+                    tools.append(duration);
+                }
+
+                header.append(name, tools);
+                row.append(header, secondary, track);
+                els.breakdownList.appendChild(row);
+            });
+        }
+
+        function segmentsForItem(day, item) {
+            if (state.activeBreakdown === 'projects') {
+                return day.timeline.filter(timelineItem => timelineItem.project === item.project);
+            }
+
+            if (state.activeBreakdown === 'languages') {
+                return day.timeline.filter(timelineItem => timelineItem.language === item.language);
+            }
+
+            return day.timeline.filter(timelineItem => timelineItem.filePath === item.filePath);
+        }
+
+        function segmentTitle(item) {
+            return item.project + ' · ' + item.language + ' · ' + item.fileName + ' · ' + formatDuration(item.durationMs);
+        }
+
+        function tooltipForBreakdown(item, totalMs) {
+            const percent = totalMs > 0 ? Math.round((item.durationMs / totalMs) * 100) : 0;
+            const parts = [
+                item.label,
+                formatDuration(item.durationMs),
+                percent + '% of visible total',
+            ];
+
+            if (item.secondary) {
+                parts.push(item.secondary);
+            }
+
+            if (item.kind === 'project' || item.kind === 'language') {
+                parts.push('Use the edit button to rename this ' + item.kind + '.');
+            }
+
+            return parts.join('\n');
+        }
+
+        function renderWeek(data) {
+            if (!data) {
+                return;
+            }
+
+            const max = Math.max(...data.week.days.map(day => day.durationMs), 1);
+            els.weekSubtitle.textContent = formatShortDate(data.week.startMs) + ' - ' + formatShortDate(data.week.endMs - 1);
+            els.weekTotal.textContent = formatDuration(data.week.totalMs);
+            els.weekChart.textContent = '';
+
+            data.week.days.forEach(day => {
+                const heightPercent = (day.durationMs / max) * 100;
+                els.weekChart.appendChild(chartColumn(day, heightPercent, state.activeWeekBreakdown));
+            });
+            renderPeriodBreakdownList(els.weekBreakdownList, data.week.days, state.activeWeekBreakdown, data.week.totalMs);
+        }
+
+        function renderYear(data) {
+            if (!data) {
+                return;
+            }
+
+            const max = Math.max(...data.year.months.map(month => month.durationMs), 1);
+            els.yearTitle.textContent = String(data.year.year);
+            els.yearTotal.textContent = formatDuration(data.year.totalMs);
+            els.yearChart.textContent = '';
+
+            data.year.months.forEach(month => {
+                const heightPercent = (month.durationMs / max) * 100;
+                els.yearChart.appendChild(chartColumn(month, heightPercent, state.activeYearBreakdown));
+            });
+            renderPeriodBreakdownList(els.yearBreakdownList, data.year.months, state.activeYearBreakdown, data.year.totalMs);
+        }
+
+        function chartColumn(bucket, maxDurationMs, breakdownKey) {
+            const wrapper = document.createElement('div');
+            const bar = document.createElement('div');
+            const labelEl = document.createElement('div');
+            const valueEl = document.createElement('div');
+
+            // Расчет высоты (от минимальных 0.35rem до 100%)
+            const heightPercent = bucket.durationMs === 0
+                ? 0 // CSS min-height: 0.35rem сам отрисует полоску
+                : (bucket.durationMs / maxDurationMs) * 100;
+
+            wrapper.className = 'chart-column';
+
+            // В твоем CSS .chart-bar уже имеет нужные скругления и фон
+            bar.className = bucket.durationMs > 0 ? 'chart-bar' : 'chart-bar empty';
+            bar.style.height = heightPercent + '%';
+            bar.title = `${bucket.label}: ${formatDuration(bucket.durationMs)}`;
+
+            // Добавляем сегментацию
+            if (bucket.durationMs > 0) {
+                const parts = bucket[breakdownKey] ?? [];
+
+                // Важно: чтобы сегменты шли снизу вверх, 
+                // добавляем им flex или используем вложенный грид/флекс в .chart-bar
+                bar.style.display = 'flex';
+                bar.style.flexDirection = 'column';
+
+                parts.forEach(item => {
+                    const segment = document.createElement('div');
+                    segment.className = 'chart-segment';
+
+                    const segmentHeight = (item.durationMs / bucket.durationMs) * 100;
+                    segment.style.height = segmentHeight + '%';
+                    segment.style.backgroundColor = item.color || '#2dd4bf';
+
+                    segment.title = `${bucket.label} · ${item.label}: ${formatDuration(item.durationMs)}`;
+                    bar.appendChild(segment);
+                });
+            }
+
+            labelEl.className = 'truncate text-center text-xs font-medium';
+            labelEl.textContent = bucket.label;
+
+            valueEl.className = 'truncate text-center text-[11px] muted';
+            valueEl.textContent = formatDuration(bucket.durationMs);
+
+            wrapper.append(bar, labelEl, valueEl);
+
+            return wrapper;
+        }
+
+        function renderPeriodBreakdownList(container, buckets, breakdownKey, totalMs) {
+            container.textContent = '';
+
+            const map = new Map();
+            buckets.forEach(bucket => {
+                (bucket[breakdownKey] ?? []).forEach(item => {
+                    const existing = map.get(item.key);
+                    if (existing) {
+                        existing.durationMs += item.durationMs;
+                    } else {
+                        map.set(item.key, { ...item });
+                    }
+                });
+            });
+
+            const items = Array.from(map.values()).sort((left, right) => right.durationMs - left.durationMs);
+
+            if (items.length === 0 || totalMs <= 0) {
+                container.appendChild(emptyState('No time in this period'));
+                return;
+            }
+
+            items.slice(0, 12).forEach((item, index) => {
+                const percent = Math.round((item.durationMs / totalMs) * 100);
+                const row = document.createElement('div');
+                const header = document.createElement('div');
+                const name = document.createElement('div');
+                const value = document.createElement('div');
+                const track = document.createElement('div');
+                const fill = document.createElement('span');
+                const icon = document.createElement('i');
+                const label = document.createElement('span');
+
+                row.className = 'breakdown-row';
+                row.style.animationDelay = Math.min(index * 18, 160) + 'ms';
+                row.title = tooltipForBreakdown(item, totalMs);
+                header.className = 'mb-1 flex min-w-0 items-center justify-between gap-3 text-sm';
+                name.className = 'flex min-w-0 items-center gap-2 font-medium';
+                value.className = 'shrink-0 text-xs muted';
+                track.className = 'progress-track';
+                fill.className = 'progress-fill';
+                fill.style.width = Math.max(2, percent) + '%';
+                fill.style.background = item.color || fallbackColor;
+                icon.className = (item.icon || 'ri-pulse-line') + ' shrink-0';
+                icon.style.color = item.color || fallbackColor;
+                label.className = 'truncate';
+                label.textContent = item.label;
+                value.textContent = percent + '% · ' + formatDuration(item.durationMs);
+
+                name.append(icon, label);
+                track.appendChild(fill);
+                header.append(name, value);
+                row.append(header, track);
+                container.appendChild(row);
+            });
+        }
+
+        function labelForBreakdown(key) {
+            if (key === 'languages') {
+                return 'Languages';
+            }
+
+            if (key === 'files') {
+                return 'Files';
+            }
+
+            return 'Projects';
+        }
+
+        function emptyState(text) {
+            const empty = document.createElement('div');
+            empty.className = 'rounded-lg border border-white/10 p-3 text-sm muted';
+            empty.textContent = text;
+            return empty;
+        }
+
+        function dateKeyToLocalMs(dateKey) {
+            const parts = dateKey.split('-').map(Number);
+            return new Date(parts[0], parts[1] - 1, parts[2]).getTime();
+        }
+
+        function formatDuration(ms) {
+            if (ms <= 0) {
+                return '0s';
+            }
+
+            const totalSeconds = Math.floor(ms / 1000);
+            const totalMinutes = Math.floor(totalSeconds / 60);
+
+            if (totalMinutes < 1) {
+                return totalSeconds + 's';
+            }
+
+            if (totalMinutes < 60) {
+                return totalMinutes + 'm';
+            }
+
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            return hours + 'h ' + String(minutes).padStart(2, '0') + 'm';
+        }
+
+        function formatClock(ms) {
+            return new Intl.DateTimeFormat(undefined, {
+                hour: '2-digit',
+                minute: '2-digit',
+            }).format(new Date(ms));
+        }
+
+        function formatShortDate(ms) {
+            return new Intl.DateTimeFormat(undefined, {
+                month: 'short',
+                day: 'numeric',
+            }).format(new Date(ms));
+        }
+
+        requestStats();
+        setInterval(requestStats, 30000);
+    </script>
+</body>
+
+</html>
