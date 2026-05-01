@@ -3,10 +3,13 @@
 		"module": "Node16",
 		"target": "ES2022",
 		"lib": [
-			"ES2022"
-		],
+			"ES2022",
+			"DOM",
+			"DOM.Iterable" 
+		],	
+		"types": ["vscode-webview"],
 		"sourceMap": true,
 		"rootDir": "src",
 		"strict": true,
-	}
+	},
 }

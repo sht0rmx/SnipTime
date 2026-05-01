@@ -84,18 +84,28 @@ export class DashboardProvider {
 
     private static html(extensionUri: vscode.Uri, webview: vscode.Webview): string {
         const nonce = nonceValue();
+
         const htmlUri = vscode.Uri.joinPath(extensionUri, 'webviews', 'dashboard.html');
+        const cssUri = vscode.Uri.joinPath(extensionUri, 'webviews', 'main.css');
+
+        const styleUri = webview.asWebviewUri(cssUri);
+        const jsUri = vscode.Uri.joinPath(extensionUri, 'webviews', 'script.js');
+        const scriptUri = webview.asWebviewUri(jsUri);
+
+
         const csp = [
             "default-src 'none'",
             `img-src ${webview.cspSource} https: data:`,
             `font-src ${webview.cspSource} https://cdn.jsdelivr.net`,
-            `style-src ${webview.cspSource} 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.tailwindcss.com`,
-            `script-src 'nonce-${nonce}' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com`,
+            `style-src ${webview.cspSource} 'unsafe-inline' https://cdn.jsdelivr.net`,
+            `script-src 'nonce-${nonce}' ${webview.cspSource} https://cdn.jsdelivr.net https://unpkg.com`,
         ].join('; ');
 
         return fs.readFileSync(htmlUri.fsPath, 'utf8')
             .replaceAll('{{csp}}', csp)
-            .replaceAll('{{nonce}}', nonce);
+            .replaceAll('{{nonce}}', nonce)
+            .replace('{{styleUri}}', styleUri.toString())
+            .replace('{{scriptUri}}', scriptUri.toString());
     }
 }
 

@@ -1,0 +1,552 @@
+/* ========== GLOBAL ========== */
+:root {
+  color-scheme: dark;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* ========== BASE & LAYOUT ========== */
+body {
+  min-width: 320px;
+  margin: 0;
+  background: var(--vscode-editor-background);
+  color: var(--vscode-foreground);
+  font-family: var(--vscode-font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.page {
+  min-height: 100vh;
+  background: var(--vscode-editor-background);
+}
+
+.surface {
+  border: 1px solid
+    color-mix(in srgb, var(--vscode-panel-border) 72%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--vscode-editor-background) 88%, black);
+}
+
+.muted {
+  color: color-mix(in srgb, var(--vscode-foreground) 66%, transparent);
+}
+
+.topbar {
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--vscode-panel-border) 72%, transparent);
+  padding-bottom: 0.9rem;
+}
+
+/* ========== SUMMARY GRID & CARDS ========== */
+#summaryGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+@media (min-width: 1280px) {
+  #summaryGrid.grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  #summaryGrid.grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.summary-card {
+  transition:
+    opacity 280ms ease,
+    transform 280ms ease;
+  will-change: opacity, transform;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.summary-card:hover {
+  border-color: color-mix(
+    in srgb,
+    var(--vscode-focusBorder) 70%,
+    var(--vscode-panel-border)
+  );
+  transform: translateY(-1px);
+}
+
+#selectedDayCard {
+  transition:
+    opacity 280ms ease,
+    transform 280ms ease,
+    padding 280ms ease,
+    margin 280ms ease;
+  will-change: opacity, transform;
+}
+
+#selectedDayCard.card-fading {
+  opacity: 0 !important;
+  transform: scale(0.95) !important;
+  pointer-events: none !important;
+}
+
+#selectedDayCard.card-hidden {
+  display: none !important;
+}
+
+/* ========== TABS ========== */
+.tabs-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--vscode-panel-border) 72%, transparent);
+  padding-bottom: 0;
+}
+
+.ui-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.25rem;
+  padding: 0 0.75rem;
+  border-radius: 8px 8px 0 0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  color: color-mix(in srgb, var(--vscode-foreground) 72%, transparent);
+  background: transparent;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 160ms ease;
+  user-select: none;
+}
+
+.ui-tab:hover {
+  color: var(--vscode-foreground);
+  background: color-mix(in srgb, var(--vscode-editor-background) 92%, white);
+}
+
+.ui-tab.active {
+  border-color: color-mix(in srgb, var(--vscode-panel-border) 84%, transparent);
+  border-bottom-color: transparent;
+  color: var(--vscode-foreground);
+  background: color-mix(in srgb, var(--vscode-editor-background) 92%, white);
+  font-weight: 500;
+}
+
+.ui-tab i {
+  font-size: 1rem;
+  opacity: 0.9;
+}
+.ui-tab.active i {
+  opacity: 1;
+}
+.tab-panel[hidden] {
+  display: none;
+}
+
+/* ========== DONUT CHART ========== */
+.donut-wrap {
+  position: relative;
+  width: min(13.5rem, 62vw);
+  aspect-ratio: 1;
+  margin: 0 auto;
+}
+
+.donut-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.donut-track {
+  fill: none;
+  stroke: color-mix(in srgb, var(--vscode-foreground) 8%, transparent);
+  stroke-width: 10;
+}
+
+.donut-segment {
+  fill: none;
+  stroke-width: 22;
+  stroke-linecap: butt;
+  transform-origin: 50% 50%;
+  transition:
+    stroke-width 160ms ease,
+    opacity 160ms ease,
+    filter 160ms ease;
+  cursor: pointer;
+  vector-effect: non-scaling-stroke;
+  pointer-events: all;
+}
+
+.donut-segment:hover {
+  opacity: 0.9;
+  filter: brightness(1.15);
+  stroke-width: 24;
+}
+
+.donut-center {
+  position: absolute;
+  inset: 20%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--vscode-editor-background) 94%, black);
+  pointer-events: none;
+  text-align: center;
+}
+
+/* ========== PROGRESS & DAY TRACKS ========== */
+.progress-track,
+.day-track {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--vscode-foreground) 10%, transparent);
+  box-sizing: border-box;
+}
+
+.progress-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--vscode-focusBorder, #2dd4bf);
+  transition: width 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 4px
+    color-mix(in srgb, var(--vscode-focusBorder) 30%, transparent);
+}
+
+.day-track {
+  width: 100%;
+  height: 10px;
+  margin-top: 0.25rem;
+  border-radius: 4px;
+}
+
+.day-segment {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  height: 100%;
+  min-width: 2px;
+  border-radius: 2px;
+  opacity: 0.92;
+  transition:
+    left 420ms ease,
+    width 420ms ease,
+    opacity 160ms ease,
+    transform 160ms ease;
+  cursor: pointer;
+  pointer-events: all;
+}
+
+.day-segment:hover {
+  opacity: 1;
+  filter: brightness(1.2);
+  z-index: 10;
+  transform: scaleY(1.25);
+}
+
+/* ========== WEEK & YEAR CHARTS (FIXED JERKS) ========== */
+.chart {
+  height: 16rem;
+  display: grid;
+  gap: 0.4rem;
+  padding: 1rem 0.25rem 0.5rem;
+  overflow: hidden;
+}
+
+.chart.week {
+  grid-template-columns: repeat(7, 1fr);
+}
+.chart.year {
+  grid-template-columns: repeat(12, 1fr);
+}
+
+.chart-column {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  cursor: pointer;
+  position: relative;
+  transform-origin: bottom;
+  transition: transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.chart-column:hover {
+  transform: scaleY(1.04);
+  z-index: 20;
+}
+
+/* 🔑 FIX: CSS-переменная вместо инлайн height + !important */
+.chart-bar {
+  width: 100%;
+  height: var(--bar-height, 0%);
+  min-height: 4px;
+  border-radius: 4px 4px 0 0;
+  position: relative;
+  display: flex;
+  flex-direction: column-reverse;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--vscode-foreground) 6%, transparent);
+  transition:
+    height 350ms cubic-bezier(0.4, 0, 0.2, 1),
+    filter 200ms ease;
+  transform-origin: bottom;
+}
+
+.chart-bar.empty {
+  background: color-mix(in srgb, var(--vscode-foreground) 10%, transparent);
+  opacity: 0.5;
+}
+
+/* 🔑 Hover теперь плавно меняет переменную, без !important */
+.chart-column:hover .chart-bar {
+  --bar-height: 100%;
+  filter: brightness(1.15) drop-shadow(0 0 8px rgba(0, 0, 0, 0.3));
+}
+
+.chart-segment {
+  width: 100%;
+  flex-shrink: 0;
+  min-height: 2px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: opacity 160ms ease;
+  margin-bottom: 2px;
+}
+
+.chart-segment:last-child {
+  margin-bottom: 0;
+}
+.chart-segment:hover {
+  opacity: 0.85;
+  filter: brightness(1.2);
+}
+
+.chart-column .text-\[10px\] {
+  font-size: 0.625rem;
+  line-height: 1;
+  opacity: 0.8;
+  transition: opacity 160ms ease;
+}
+
+.chart-column:hover .text-\[10px\] {
+  opacity: 1;
+}
+
+/* Анимация входа (только при рендере) */
+@keyframes chartRise {
+  from {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+.chart-enter {
+  animation: chartRise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+/* ========== BREAKDOWN LIST ========== */
+.breakdown-row {
+  animation: fadeSlide 160ms ease forwards;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+
+.breakdown-row .btn {
+  min-height: 1.75rem;
+  height: auto;
+  padding: 0 0.4rem;
+}
+
+/* ========== TOOLTIP SYSTEM ========== */
+[data-tooltip] .tooltip-content {
+  display: none !important;
+}
+
+#global-tooltip {
+  position: fixed;
+  pointer-events: none;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.3;
+  background: color-mix(in srgb, var(--vscode-editor-background) 96%, black);
+  color: var(--vscode-foreground);
+  border: 1px solid
+    color-mix(in srgb, var(--vscode-panel-border) 70%, transparent);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 80ms ease;
+  max-width: min(280px, calc(100vw - 32px));
+  width: max-content;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  text-align: left;
+}
+
+#global-tooltip b {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+
+#global-tooltip .muted {
+  color: color-mix(in srgb, var(--vscode-foreground) 60%, transparent);
+  font-size: 10px;
+  display: block;
+  margin-top: 3px;
+  word-break: break-all;
+}
+
+#global-tooltip i {
+  font-size: 11px;
+  margin-right: 4px;
+  opacity: 0.9;
+}
+
+.donut-segment .tooltip-content {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.95);
+  white-space: normal;
+  max-width: 200px;
+  text-align: center;
+  transition: transform 120ms ease;
+}
+
+.donut-segment:hover .tooltip-content {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.donut-segment .tooltip-content::after {
+  display: none;
+}
+
+/* ========== DATE POPOVER ========== */
+.date-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+}
+
+.date-button.open {
+  border-color: var(--vscode-focusBorder);
+  background: color-mix(in srgb, var(--vscode-editor-background) 92%, white);
+}
+
+/* ========== ANIMATIONS ========== */
+@keyframes fadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes donutPop {
+  from {
+    opacity: 0;
+    transform: scale(0.85) rotate(-8deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.donut-segment {
+  animation: donutPop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  transform-origin: 50% 50%;
+}
+
+/* ========== FOCUS STATES ========== */
+button:focus-visible,
+[role="tab"]:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: -2px;
+}
+
+/* ========== SCROLLBAR ========== */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--vscode-foreground) 20%, transparent);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--vscode-foreground) 35%, transparent);
+}
+
+/* ========== RESPONSIVE ========== */
+@media (min-width: 1024px) {
+  #summaryGrid {
+    flex-direction: row;
+    align-items: stretch; /* Карточки будут одинаковой высоты */
+  }
+}
+
+/* ========== PRINT ========== */
+@media print {
+  .btn,
+  .tabs-row,
+  .topbar {
+    display: none !important;
+  }
+  .surface {
+    border-color: #333 !important;
+  }
+}
+
+/* 🔥 При наведении на ЛЮБУЮ колонку — все остальные слегка приглушаются */
+.chart:hover .chart-column:not(:hover) {
+  opacity: 1;
+}
+
+.chart-column:hover .chart-bar {
+  --bar-height: 100% !important;
+  filter: brightness(1.2) drop-shadow(0 0 12px rgba(0, 0, 0, 0.4));
+  transition: height 250ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.chart-segment:last-child {
+  margin-bottom: 0;
+}
+.chart-segment:hover {
+  opacity: 1;
+  filter: brightness(1.3);
+}

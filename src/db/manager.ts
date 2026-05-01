@@ -15,7 +15,7 @@ import {
     TimelineItem,
 } from '../models/activity';
 
-interface IntervalRow {
+export interface IntervalRow {
     id: number;
     start_ms: number;
     end_ms: number;
@@ -27,11 +27,11 @@ interface IntervalRow {
     language: string;
 }
 
-interface TotalRow {
+export interface TotalRow {
     totalMs: number | null;
 }
 
-interface MapValue {
+export interface MapValue {
     key: string;
     kind: TagKind;
     label: string;
@@ -44,7 +44,7 @@ interface MapValue {
     icon: string;
 }
 
-interface TagMetadata {
+export interface TagMetadata {
     kind: TagKind;
     key: string;
     label: string;
@@ -52,7 +52,7 @@ interface TagMetadata {
     icon: string;
 }
 
-interface MetadataRow {
+export interface MetadataRow {
     kind: TagKind;
     key: string;
     label: string;
